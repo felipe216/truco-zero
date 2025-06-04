@@ -1,6 +1,7 @@
 # main.py
 import argparse
 from train.train_agent import train_agent
+from eval.player_vs_agent import play_game
 #from eval.play_vs_random import simular_jogo
 #from eval.play_vs_model import jogar_contra_modelo
 
@@ -13,7 +14,7 @@ if __name__ == "__main__":
         train_agent()
     #elif args.modo == "avaliar":
     #    simular_jogo()
-    #elif args.modo == "jogar":
-    #    jogar_contra_modelo()
+    elif args.modo == "jogar":
+        play_game()
     #else:
     #    raise ValueError(f"Modo inválido: {args.modo}")
