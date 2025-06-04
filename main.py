@@ -1,4 +1,3 @@
-# main.py
 import argparse
 from train.train_agent import train_agent
 from eval.player_vs_agent import play_game
