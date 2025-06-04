@@ -17,9 +17,10 @@ CARDS_STRENGTH = {
 }
 
 def shuffle_and_deal():
-    suffled_cards = random.shuffle(TRUCO_CARDS)
-    cards = random.sample(suffled_cards, 7)
-    return cards[:3], cards[3:5], cards[6], suffled_cards, CARDS_STRENGTH
+    cards = TRUCO_CARDS[:]
+    random.shuffle(TRUCO_CARDS)
+    cards = random.sample(cards, 7)
+    return cards[:3], cards[3:5], cards[6], cards, CARDS_STRENGTH
 
 
 def get_card_strength(card: str, cards: dict) -> int:
@@ -72,10 +73,13 @@ def set_card_strength(cards: dict, manilha: str) -> dict:
 
 def get_strongest_card(cards: list, player_cards: list) -> str:
     greater_card = cards[player_cards[0]]
+    greater_card_key = player_cards[0]
     for player_card in player_cards:
         if cards[player_card] > greater_card:
             greater_card = cards[player_card]
-    return greater_card
+            greater_card_key = player_card
+
+    return greater_card_key
 
 if __name__ == "__main__":
     cards = set_card_strength(CARDS_STRENGTH, '4E')

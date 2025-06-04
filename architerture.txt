@@ -1,0 +1,8 @@
+truco/
+├── env.py         ← Ambiente (TrucoEnv)
+├── regras.py      ← Regras e cartas
+
+agents/
+├── random_agent.py   ← Age aleatoriamente
+├── q_learning_agent.py
+├── dqn_agent.py

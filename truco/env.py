@@ -11,8 +11,11 @@ class TrucoEnv(gym.Env):
         super().__init__()
 
         
-        self.observation_space = spaces.Box(low=0, high=20, shape=(6,0), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=20, shape=(8,), dtype=np.int32)
         
+        self.agent1_matches_won = 0
+        self.agent2_matches_won = 0
+
         # Define the observation and action spaces: 0, 1, 2: play card; 3 = truca, 4 = pass, 5 = raise
         self.action_space = spaces.Discrete(6)
 
@@ -24,7 +27,7 @@ class TrucoEnv(gym.Env):
 
         self.agent1_cards, self.agent2_cards, self.manilha, self.cards, self.cards_strength = shuffle_and_deal()
 
-        self.cards_strength = set_card_strength(self.cards, self.manilha)
+        self.cards_strength = set_card_strength(self.cards_strength, self.manilha)
 
         self.cards_played = []
         self.oponent_cards_played = []
@@ -36,6 +39,8 @@ class TrucoEnv(gym.Env):
         self.agent1_score = 0
         self.agent2_score = 0
         self.draw = False
+        self.agent1_rounds = 0
+        self.agent2_rounds = 0
 
         return self._get_observation(), {}
 
@@ -59,17 +64,20 @@ class TrucoEnv(gym.Env):
             self.truco_value += 3
         else:
             carta_idx = action
-            if carta_idx >= len(self.mao_agente):
+            if carta_idx >= len(self.agent1_cards):
                 # invalid action
-                reward = -self.valor_truco
+                reward = -self.truco_value
                 terminated = True
                 self.done = True
-                return self._get_obs(), reward, terminated, truncated, info
+                return self._get_observation(), reward, terminated, truncated, info
             
             agent1_card = self.agent1_cards.pop(carta_idx)
             agent2_card = get_strongest_card(self.cards_strength, self.agent2_cards)
-
-            winner = get_round_winner(agent1_card, agent2_card)
+            
+            self.cards_played.append(agent1_card)
+            self.oponent_cards_played.append(agent2_card)
+            
+            winner = get_round_winner(agent1_card, agent2_card, self.cards_strength)
 
             if winner == 1 and not self.draw:
                 self.agent1_score += 1
@@ -82,34 +90,50 @@ class TrucoEnv(gym.Env):
 
             if self.agent1_score == 2:
                 reward = self.truco_value
-                terminated = True
-                self.done = True
-                return self._get_obs(), reward, terminated, truncated, info
+                self.agent1_rounds += 1
+                return self._get_observation(), reward, terminated, truncated, info
             elif self.agent2_score == 2:
                 reward = -self.truco_value
-                terminated = True
-                self.done = True            
-                return self._get_obs(), reward, terminated, truncated, info
+                self.agent2_rounds += 1
+                return self._get_observation(), reward, terminated, truncated, info
             elif winner == 1 and self.draw:
+                self.agent1_rounds += 1
                 reward = self.truco_value
-                terminated = True
-                self.done = True
                 self.draw = False
-                return self._get_obs(), reward, terminated, truncated, info
+                return self._get_observation(), reward, terminated, truncated, info
             elif winner == 2 and self.draw:
                 reward = -self.truco_value
+                self.draw = False
+                self.agent2_rounds += 1
+                return self._get_observation(), reward, terminated, truncated, info
+            
+
+            if self.agent1_rounds == 12:
+                self.agent1_matches_won += 1
+                return self._get_observation(), reward, terminated, truncated, info
+            elif self.agent2_rounds == 12:
+                self.agent2_matches_won += 1
+                return self._get_observation(), reward, terminated, truncated, info
+
+            if self.agent1_matches_won == 2 or self.agent2_matches_won == 2:
                 terminated = True
                 self.done = True
-                self.draw = False
-                return self._get_obs(), reward, terminated, truncated, info
+                return self._get_observation(), reward, terminated, truncated, info
+
+        return self._get_observation(), reward, terminated, truncated, info
             
 
     def _get_observation(self):
         obs = [
-            self.cards[self.agent1_cards[i]] if i < len(self.agent1_cards) else 0
-            for i in range(3)
+            self.rodada,
+            self.truco_value,
+            self.truco_value,
+            int(self.truco_called),
+            self.agent1_matches_won,
+            self.agent2_matches_won,
+            self.agent1_score,
+            self.agent2_score
         ]
-        obs.append(self.rodada)
-        obs.append(self.truco_value)
+
         return np.array(obs, dtype=np.int32)
             
