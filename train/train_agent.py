@@ -11,7 +11,6 @@ def train_agent():
 
     check_env(env, warn=True)
 
-    vec_env = DummyVecEnv([lambda: TrucoEnv()])
 
     checkpoint_callback = CheckpointCallback(save_freq=10_000, save_path='./checkpoints/', name_prefix='truco_agent')
     callback = RewardLoggingCallback()

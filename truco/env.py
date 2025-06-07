@@ -18,8 +18,6 @@ class TrucoEnv(gym.Env):
 
         self.agent1_rounds = 0
         self.agent2_rounds = 0
-        self.agent1_score = 0
-        self.agent2_score = 0
 
         # Define the observation and action spaces: 0, 1, 2: play card; 3 = truca, 4 = pass, 5 = raise
         self.action_space = spaces.Discrete(6)
@@ -44,6 +42,8 @@ class TrucoEnv(gym.Env):
         self.draw = False
         self.last_card_agent1 = None
         self.last_card_agent2 = None
+        self.agent1_score = 0
+        self.agent2_score = 0
 
         return self._get_observation(), {"round": self.rodada, "manilha": self.manilha, "your cards": self.agent2_cards, "your score": self.agent1_score, "oponent score": self.agent2_score,
             "trucado": self.truco_called, "truco value": self.truco_value, "cards played": self.cards_played, "oponent cards played": self.oponent_cards_played, "agent_1_matches": self.agent1_matches_won, "agent_2_matches": self.agent2_matches_won,
@@ -87,6 +87,7 @@ class TrucoEnv(gym.Env):
         else:
             if self.mode == 'train':
                 self._make_agent1_move(action)
+
                 agent2_card = get_strongest_card(self.cards_strength, self.agent2_cards)
                 self._make_agent2_move(agent2_card)
                 reward = self._check_round_winner()
@@ -94,12 +95,12 @@ class TrucoEnv(gym.Env):
                 if player_turn == 1:
                     self._make_agent1_move(action)
                 elif player_turn == 2:
-                    self._make_agent2_move(action)
+                    self._make_player_move(action)
 
-                if second_action is not None:
+                if second_action:
                     reward = self._check_round_winner()
             
-            if self._check_end_game():
+            if self._check_end_round():
                 terminated = True
                 self.done = True
             
@@ -118,10 +119,11 @@ class TrucoEnv(gym.Env):
             self.agent1_score,
             self.agent2_score
         ]
-        
+        i = 0
         for card in self.agent1_cards:
-            print(card)
             obs.append(get_card_strength(card, self.cards_strength))
+            i += 1
+        obs.extend([-1] * (3 - len(self.agent1_cards)))
 
         return np.array(obs, dtype=np.int32)
     
@@ -133,8 +135,8 @@ class TrucoEnv(gym.Env):
             "trucado": self.truco_called,
             "your score": self.agent1_score,
             "oponent score": self.agent2_score,
-            "agent_1_matches": self.agent1_matches_won,
-            "agent_2_matches": self.agent2_matches_won,
+            "agent1_matches_won": self.agent1_matches_won,
+            "agent2_matches_won": self.agent2_matches_won,
             "agent_1_rounds": self.agent1_rounds,
             "agent_2_rounds": self.agent2_rounds,
             "bot_cards": self.agent1_cards
@@ -144,11 +146,12 @@ class TrucoEnv(gym.Env):
     
 
     def _make_agent1_move(self, card_idx: int):
-        if card_idx >= len(self.agent1_cards):
+        if card_idx+1 > len(self.agent1_cards):
+            print("invalid action")
             return
             # invalid action
         agent1_card = self.agent1_cards.pop(card_idx)
-            
+
         self.cards_played.append(agent1_card)
         self.last_card_agent1 = agent1_card
 
@@ -162,7 +165,22 @@ class TrucoEnv(gym.Env):
         self.cards_played.append(agent2_card)
         self.last_card_agent2 = agent2_card
 
+    def _make_player_move(self, card_idx: int):
+        if card_idx >= len(self.agent2_cards):
+            return
+            # invalid action
+        agent2_card = self.agent2_cards.pop(card_idx)
+            
+        self.cards_played.append(agent2_card)
+        self.last_card_agent2 = agent2_card
+
     def _check_round_winner(self):
+        if not self.last_card_agent1:
+            print('errado')
+            return -self.truco_value
+        if not self.last_card_agent2:
+            winner = 1
+            return self.truco_value
         winner = get_round_winner(self.last_card_agent1, self.last_card_agent2, self.cards_strength)
 
         
@@ -206,6 +224,15 @@ class TrucoEnv(gym.Env):
             return True
 
         if self.agent1_matches_won == 2 or self.agent2_matches_won == 2:
+            return True
+
+        return False
+    
+    def _check_end_round(self):
+        if len(self.agent1_cards) == 0 or len(self.agent2_cards) == 0:
+            return True
+        
+        if self.agent1_score == 2 or self.agent2_score == 2:
             return True
 
         return False

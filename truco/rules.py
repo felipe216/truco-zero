@@ -1,4 +1,5 @@
 import random
+import copy
 
 
 
@@ -17,10 +18,11 @@ CARDS_STRENGTH = {
 }
 
 def shuffle_and_deal():
-    cards = TRUCO_CARDS[:]
-    random.shuffle(TRUCO_CARDS)
+    cards = copy.deepcopy(TRUCO_CARDS)
+    random.shuffle(cards)
     cards = random.sample(cards, 7)
-    return cards[:3], cards[3:6], cards[6], cards, CARDS_STRENGTH
+
+    return cards[:3], cards[3:6], cards[6], cards, copy.deepcopy(CARDS_STRENGTH)
 
 
 def get_card_strength(card: str, cards: dict) -> int:
@@ -39,11 +41,11 @@ def set_card_strength(cards: dict, manilha: str) -> dict:
     card_number = manilha[0]
 
     suits = ['E', 'C', 'O', 'P']
-    try: 
-        card_number_int = int(card_number)
+    is_number = False
+    
+    if card_number.isnumeric():
         is_number = True
-    except: 
-        is_number = False
+        card_number_int = int(card_number)
 
     if is_number:
         if card_number_int < 7:

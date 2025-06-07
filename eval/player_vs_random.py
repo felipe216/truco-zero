@@ -9,7 +9,7 @@ def simulate_game():
     done = False
     while not done:
         actions = env.action_space.sample()
-        action = agente_random.escolher_acao(obs, actions)
+        action = agente_random.choose_action(obs, actions)
         obs, reward, done, _, _ = env.step(action)
         env.render()
 
