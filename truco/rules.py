@@ -20,7 +20,7 @@ def shuffle_and_deal():
     cards = TRUCO_CARDS[:]
     random.shuffle(TRUCO_CARDS)
     cards = random.sample(cards, 7)
-    return cards[:3], cards[3:5], cards[6], cards, CARDS_STRENGTH
+    return cards[:3], cards[3:6], cards[6], cards, CARDS_STRENGTH
 
 
 def get_card_strength(card: str, cards: dict) -> int:
