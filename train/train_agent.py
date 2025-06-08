@@ -19,10 +19,10 @@ def train_agent():
     callback = RewardLoggingCallback()
 
     model = PPO("MlpPolicy", vec_env, verbose=1)
-    model = PPO.load("ppo_truco", env=vec_env)
-    model.learn(total_timesteps=100_000, callback=[callback, checkpoint_callback])
+    model = PPO.load("models/ppo_truco", env=vec_env)
+    model.learn(total_timesteps=10_000, callback=[callback, checkpoint_callback])
 
-    model.save('ppo_truco')
+    model.save('models/ppo_truco')
 
     print('Training finished')
     callback.plot_rewards()

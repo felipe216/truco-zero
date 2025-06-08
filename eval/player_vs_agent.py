@@ -1,4 +1,5 @@
 import gymnasium as gym
+from stable_baselines3 import PPO
 import numpy as np
 from truco.env import TrucoEnv
 # from stable_baselines3 import PPO # Descomente se quiser carregar um modelo treinado
@@ -13,7 +14,7 @@ def play_game():
     # except Exception as e:
     #     print(f"Erro ao carregar modelo do Agente 1: {e}. Agente 1 jogará aleatoriamente.")
     #     agent1_model = None
-    agent1_model = None # Padrão para agente aleatório para o Agente 1
+    agent1_model = PPO.load("models/agent1/ppo_truco_agent1_final")
 
     print("Iniciando jogo de Truco: Humano (Agente 2) vs. Agente (Agente 1)")
     print("------------------------------------------------------------")

@@ -1,4 +1,5 @@
 import argparse
+import time
 from train.train_agent import train_agent
 from eval.player_vs_agent import play_game
 from eval.player_vs_player import play_game_vs
@@ -12,7 +13,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.modo == "treinar":
+        start_time = time.time()
         train_self_play()
+        end_time = time.time()
+        time_taken = end_time - start_time
+        tps = 50000 / time_taken
+
+        print(f"Tempo gasto para 50.000 timesteps: {time_taken:.2f} segundos")
+        print(f"Taxa de Timesteps por Segundo (TPS): {tps:.2f}")
+
+        estimated_time_for_1M_seconds = 1_000_000 / tps
+        estimated_time_for_1M_hours = estimated_time_for_1M_seconds / 3600
+
+        print(f"Tempo estimado para 1.000.000 timesteps: {estimated_time_for_1M_seconds:.2f} segundos ({estimated_time_for_1M_hours:.2f} horas)")
     #elif args.modo == "avaliar":
     #    simular_jogo()
     elif args.modo == "jogar":

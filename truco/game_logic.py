@@ -135,6 +135,8 @@ class TrucoMatch:
         self.player_truco = None
         self.raise_called = False
         self.player_raise = None
+        self.truco_accepted = False
+        self.raise_accepted = False
 
 
     def start_new_round(self, agent1_cards, agent2_cards, manilha, cards_strength):
@@ -176,8 +178,11 @@ class TrucoMatch:
         if player_id == self.player_truco:
             self.truco_called = False
             return False
+        elif not self.truco_called:
+            return False
         else:
             self.truco_value = 3
+            self.truco_accepted = True
             return True
 
     def raise_truco(self, player_id):
@@ -208,6 +213,7 @@ class TrucoMatch:
         else:
             if self.truco_value == 3:
                 self.truco_value += 3
+            self.raise_accepted = True
             return True
 
     def fold_truco(self, player_id):
@@ -217,6 +223,7 @@ class TrucoMatch:
         else:
             self.truco_value = 1
             self.truco_called = False
+            self.truco_accepted = False
             if player_id == 1:
                 self.agent2_score += self.truco_value
             else:
@@ -237,4 +244,8 @@ class TrucoMatch:
                 self.agent2_score += self.truco_value
             else:
                 self.agent1_score += self.truco_value
+            self.truco_accepted = False
+            self.raise_called = False
+            self.player_raise = None
+            self.raise_accepted = False
             return True
