@@ -108,7 +108,6 @@ class TrucoGame:
         else:
             self.agent2_matches_won += 1
 
-        self.star_new_match()
         return self.is_game_over()
 
     def is_game_over(self):

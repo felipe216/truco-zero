@@ -39,13 +39,14 @@ def play_game():
             print(f"Truco Chamado: {'Sim' if info['trucado'] else 'Não'}")
             print(f"Placar da Partida: Agente 1: {env.game.current_match.agent1_score} pontos, Agente 2: {env.game.current_match.agent2_score} pontos")
             print(f"Partidas Ganhas no Jogo: Agente 1: {env.game.agent1_matches_won}, Agente 2: {env.game.agent2_matches_won}")
+            print(f"Mao ganhas: Agente 1: {env.game.current_match.current_round.agent1_hands_won}, Agente 2: {env.game.current_match.current_round.agent2_hands_won}")
             print(f"Cartas Jogadas na Mão atual: {info['cards played in hand']}")
             print(f"Manilha: {info['manilha']}")
 
             action = -1
             if current_player == 2: # Jogador Humano
                 print(f"Suas cartas: {info['your cards']}")
-                print("Ações disponíveis: 0, 1, 2 (jogar carta), 3 (truco), 4 (passar), 5 (aumentar truco)")
+                print("Ações disponíveis: 0, 1, 2 (jogar carta), 3 (truco), 4 (correr), 5 (aumentar truco), 6 (aceitar truco), 7 (aceitar aumento), 8 (passar aumento)")
                 
                 valid_input = False
                 while not valid_input:
