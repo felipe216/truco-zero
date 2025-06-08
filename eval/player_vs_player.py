@@ -3,19 +3,11 @@ import numpy as np
 from truco.env import TrucoEnv
 # from stable_baselines3 import PPO # Descomente se quiser carregar um modelo treinado
 
-def play_game():
+def play_game_vs():
     env = TrucoEnv(mode="two_agents")
-    
-    # --- Carregue seu modelo treinado aqui se tiver um para o Agente 1 ---
-    # try:
-    #     agent1_model = PPO.load("caminho/para/seu/modelo_agente1_treinado")
-    #     print("Modelo do Agente 1 carregado com sucesso!")
-    # except Exception as e:
-    #     print(f"Erro ao carregar modelo do Agente 1: {e}. Agente 1 jogará aleatoriamente.")
-    #     agent1_model = None
-    agent1_model = None # Padrão para agente aleatório para o Agente 1
 
-    print("Iniciando jogo de Truco: Humano (Agente 2) vs. Agente (Agente 1)")
+
+    print("Iniciando jogo de Truco: Humano (Agente 2) vs. Humano (Agente 1)")
     print("------------------------------------------------------------")
 
     while True: # Loop para múltiplos jogos/episódios
@@ -39,6 +31,7 @@ def play_game():
             print(f"Truco Chamado: {'Sim' if info['trucado'] else 'Não'}")
             print(f"Placar da Partida: Agente 1: {env.game.current_match.agent1_score} pontos, Agente 2: {env.game.current_match.agent2_score} pontos")
             print(f"Partidas Ganhas no Jogo: Agente 1: {env.game.agent1_matches_won}, Agente 2: {env.game.agent2_matches_won}")
+            print(f"Mao ganhas: Agente 1: {env.game.current_match.current_round.agent1_hands_won}, Agente 2: {env.game.current_match.current_round.agent2_hands_won}")
             print(f"Cartas Jogadas na Mão atual: {info['cards played in hand']}")
             print(f"Manilha: {info['manilha']}")
 
@@ -58,15 +51,21 @@ def play_game():
                             print("Ação inválida. Por favor, escolha um número entre 0 e 5.")
                     except ValueError:
                         print("Entrada inválida. Por favor, digite um número.")
-            else: # Agente de IA (Agente 1)
-                # Não mostra as cartas do Agente de IA para o jogador humano
-                if agent1_model:
-                    action, _states = agent1_model.predict(obs, deterministic=True)
-                    if isinstance(action, np.ndarray):
-                        action = action.item()
-                else:
-                    action = env.action_space.sample()
-                print(f"Agente 1 escolheu a ação: {action}")
+            else:
+                print(f"Suas cartas: {info['your cards']}")
+                print("Ações disponíveis: 0, 1, 2 (jogar carta), 3 (truco), 4 (correr), 5 (aumentar truco), 6 (aceitar truco), 7 (aceitar aumento), 8 (passar aumento)")
+                
+                valid_input = False
+                while not valid_input:
+                    try:
+                        action_input = input("Escolha sua ação (0-8): ")
+                        action = int(action_input)
+                        if 0 <= action <= 8:
+                            valid_input = True
+                        else:
+                            print("Ação inválida. Por favor, escolha um número entre 0 e 5.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, digite um número.")
 
             # Executa a ação no ambiente
             obs, reward, terminated, truncated, info = env.step(action)

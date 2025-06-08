@@ -17,7 +17,7 @@ class TrucoEnv(gym.Env):
         
         # Define the observation and action spaces: [0, 1, 2]: play card; [3, 4, 5]: truco; [6, 7, 8]: raise, 9: pass
         # can pass more than one action: play a card and trucar, or play a card and raise
-        self.action_space = spaces.Discrete(10)
+        self.action_space = spaces.Discrete(9)
 
         self.game = None
         self.reset(current_player=current_player)
@@ -44,169 +44,148 @@ class TrucoEnv(gym.Env):
         reward = 0
         terminated = False
         truncated = False
-        hand_played = False
+        info = self._get_info(self.current_player)
 
         current_match = self.game.current_match
         current_round = current_match.current_round
 
         if self.done:
-            return self._get_observation(self.current_player), reward, True, truncated, self._get_info(self.current_player)
+            return self._get_observation(self.current_player), reward, True, truncated, info
 
-        #just play a card
+        acting_player = self.current_player
+        next_player = 3 - acting_player
+
         if action < 3:
-            if self.mode == 'train':
-                moves = [i for i in range(len(current_round.agent2_cards))]
-                agent_move = self.agent.choose_action(moves)
-                is_valid_move = current_round.validade_move(action, 1)
-                if not is_valid_move:
-                    reward += -current_match.truco_value
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
+            result = current_round.play_single_card(acting_player, action)
 
-                current_round.play_hand(action, agent_move)
-                hand_played = True
+            if result == -1:
+                reward = -10
+                terminated = True
+                self.done = True
+
             else:
-                if current_match.truco_called:
-                    current_match.accept_truco(self.current_player)
-                    reward += 0.5
+                reward += 0.3
+
+                if current_round.both_cards_played_in_hand():
+                    winner_hand = current_round.get_hand_winner()
+                    current_round.update_round_score(winner_hand)
+                    current_round.current_hand_number += 1
                     
-                current_round.play_single_card(self.current_player, action)
-                reward += 0.5
+                    if winner_hand == acting_player:
+                        reward += 1
+                    elif winner_hand != 0:
+                        reward += -1
 
-        elif action in [3, 4, 5]:
-            if self.mode == 'train':
-                is_valid_move = current_round.validade_move(action-3, 1)
-                if not is_valid_move:
-                    reward += -current_match.truco_value
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
-                if not current_match.check_truco(1):
-                    reward += -0.5
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
-                reward += 0.5
-                current_match.call_truco(1)
-                moves = []
-                for move in range(len(current_round.agent2_cards)):
-                    moves.append(move+3)
-                    moves.append(move+6)
-                moves.append(9)
-                agent_move = self.agent.choose_action(moves)
-                if agent_move in [3, 4, 5]:
-                    current_match.accept_truco(2)
-                    agent_move -= 3
-                elif agent_move in [6, 7, 8]:
-                    current_match.raise_truco(2)
-                    agent_move -= 6
+                    current_round.last_card_agent1 = None 
+                    current_round.last_card_agent2 = None 
+                    current_round.cards_played_in_hand = [] 
+
+                    if current_round.is_round_over():
+                        round_winner = current_round.get_round_winner()
+                        current_match.update_match_score(round_winner, current_match.truco_value)
+                        
+                        if round_winner == acting_player:
+                            reward += current_match.truco_value
+                        elif round_winner != 0:
+                            reward += -current_match.truco_value
+
+                        agent1_cards, agent2_cards, manilha, cards, cards_strength = shuffle_and_deal()
+                        cards_strength = set_card_strength(cards_strength, manilha)
+                        self.game.current_match.start_new_round(agent1_cards, agent2_cards, manilha, cards_strength)
+
+                        if current_match.is_match_over():
+                            match_winner = current_match.get_match_winner()
+                            self.game.update_game_score(match_winner)
+                            
+                            if match_winner == acting_player:
+                                reward += 10
+                            else:
+                                reward += -10
+
+                            if self.game.is_game_over():
+                                terminated = True
+                                self.done = True
+                                game_winner = self.game.get_game_winner()
+
+                                if game_winner == acting_player:
+                                    reward += 100
+                                else:
+                                    reward += -100
+                            else:
+                                self.game.start_new_match()
+                                agent1_cards, agent2_cards, manilha, cards, cards_strength = shuffle_and_deal()
+                                cards_strength = set_card_strength(cards_strength, manilha)
+                                self.game.current_match.start_new_round(agent1_cards, agent2_cards, manilha, cards_strength)
+
+                    if not terminated:
+                        self.current_player = next_player
                 else:
-                    current_match.fold_truco(2)
-                current_round.play_hand(action-3, agent_move)
-                hand_played = True
-            else:
-                if not current_match.check_truco(self.current_player):
-                    reward += -0.5
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
-                reward += 0.5
-                current_match.call_truco(self.current_player)
-                
+                    self.current_player = next_player
 
-        elif action in [6, 7, 8]:
-            if self.mode == 'train':
-                is_valid_move = current_round.validade_move(action-6, 1)
-                if not is_valid_move:
-                    reward += -current_match.truco_value
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
-                valid_raise = current_match.raise_truco(1)
-                if not valid_raise:
-                    reward += -0.5
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
+        elif action == 3:
+            if current_match.check_truco(self, acting_player):
+                current_match.call_truco(acting_player)
                 reward += 0.5
-                current_match.accept_raise(2)
-                moves = []
-                for move in range(len(current_round.agent1_cards)):
-                    moves.append(move+3)
-                    moves.append(move+6)
-                moves.append(9)
-                agent_move = self.agent.choose_action(moves)
-                if agent_move in [3, 4, 5]:
-                    current_match.accept_truco(2)
-                    agent_move -= 3
-                    current_round.play_hand(action-6, agent_move)
-                    hand_played = True
-                elif agent_move in [6, 7, 8]:
-                    current_match.raise_truco(2)
-                    agent_move -= 6
-                    current_round.play_hand(action-6, agent_move)
-                    hand_played = True
-                elif agent_move == 9:
-                    current_match.fold_truco(2)
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
+                self.current_player = next_player
             else:
-                valid_raise = current_match.raise_truco(self.current_player)
-                if not valid_raise:
-                    reward += -0.5
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
+                reward = -5
+                terminated = True
+                self.done = True
+
+        elif action == 4:
+            current_match.fold_truco(acting_player)
+            reward = -current_match.truco_value
+            terminated = True
+            self.done = True
+
+        elif action == 5:
+            if current_match.raise_truco(acting_player):
                 reward += 0.5
-                current_match.accept_raise(self.current_player)
-        elif action == 9:
-            if self.mode == 'train':
-                valid_fold = current_match.fold_truco(1)
-                if not valid_fold:
-                    reward += -0.5
-                    current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-                    return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
+                self.current_player = next_player
+            else:
+                reward = -5
+                terminated = True
+                self.done = True
+        elif action == 6: # accept truco
+            if current_match.accept_truco(acting_player):
                 reward += 0.5
+                self.current_player = next_player
             else:
-                current_match.fold_truco(self.current_player)
-                current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-
-                
-
-        
-        if current_round.hand_ready():
-            current_round.play_hand(current_round.card_agent1, current_round.card_agent2)
-            hand_played = True
-
-        if hand_played:
-            winner = current_round.get_hand_winner()
-            if winner == 1:
-                reward += 1
+                reward = -5
+                terminated = True
+                self.done = True
+        elif action == 7: # accept raise
+            if current_match.accept_raise(acting_player):
+                reward += 0.5
+                self.current_player = next_player
             else:
-                reward += -1
-            is_round_over = current_round.is_round_over()
-            if is_round_over:
-                winner = current_round.get_round_winner()
-                current_match.update_match_score(winner, current_match.truco_value)
-                winner = current_round.get_round_winner()
-                if winner == 1:
-                    reward += current_match.truco_value
-                else:
-                    reward += -current_match.truco_value
-                current_match.start_new_round(current_round.agent1_cards, current_round.agent2_cards, current_round.manilha, current_round.cards_strength)
-            
-            if current_match.is_match_over():
-                winner = current_match.get_match_winner()
-                if winner == 1:
-                    reward += 10
-                else:
-                    reward += -10
-                is_game_done = self.game.update_game_score(winner)
-                if is_game_done:
-                    terminated = True
-                    self.done = True
-                    winner = self.game.get_game_winner()
-                    if winner == 1:
-                        reward += 100
-                    else:
-                        reward += -100
-        
-        
-        
-        
+                reward = -5
+                terminated = True
+                self.done = True
+        elif action == 8: # fold raise
+            current_match.fold_raise(acting_player)
+            reward = -current_match.truco_value
+            terminated = True
+            self.done = True
+        # --- Lógica para Aceitar/Recusar Truco/Aumento (Se as ações 6,7,8,9 forem para isso) ---
+        # Se as ações 6, 7, 8, 9 são para aceitar/recusar truco/aumento, elas devem ser tratadas aqui.
+        # É crucial que o ambiente saiba qual ação de truco está pendente (chamada ou aumento).
+        # Exemplo (apenas para ilustrar, pode precisar de mais estado no TrucoMatch):
+        # elif action == 6: # Aceitar Truco/Aumento
+        #     if current_match.accept_pending_truco(acting_player):
+        #         reward += 0.2 # Recompensa por aceitar e continuar o jogo
+        #         self.current_player = next_player # O jogo continua, próximo turno
+        #     else:
+        #         reward = -1 # Penalidade por aceitar truco inválido
+        #         terminated = True
+        #         self.done = True
+        # elif action == 7: # Recusar Truco/Aumento (Desistir)
+        #     current_match.fold_pending_truco(acting_player)
+        #     reward = -current_match.truco_value # Penalidade por recusar
+        #     terminated = True
+        #     self.done = True
+
+        # Retorna a observação para o current_player (que pode ter sido alternado)
         return self._get_observation(self.current_player), reward, terminated, truncated, self._get_info(self.current_player)
                 
                         

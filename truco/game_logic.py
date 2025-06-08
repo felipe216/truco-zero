@@ -14,15 +14,28 @@ class TrucoRound:
         self.draw_in_hand = False
         self.last_card_agent1 = None
         self.last_card_agent2 = None
-        self.card_agent1 = None
-        self.card_agent2 = None
-        self.cards_played_in_hand = [self.card_agent1, self.card_agent2]
+        self.cards_played_in_hand = []
 
     def play_single_card(self, agent_id, card_idx):
+        print(self.agent1_cards, agent_id, card_idx)
         if agent_id == 1:
-            self.card_agent1 = self.agent1_cards[card_idx]
+            try:
+                self.last_card_agent1 = self.agent1_cards.pop(card_idx)
+                self.cards_played.append(self.last_card_agent1)
+                self.cards_played_in_hand.append(self.last_card_agent1)
+                return 1
+            except:
+                return -1
+        elif agent_id == 2:
+            try:
+                self.last_card_agent2 = self.agent2_cards.pop(card_idx)
+                self.cards_played.append(self.last_card_agent2)
+                self.cards_played_in_hand.append(self.last_card_agent2)
+                return 1
+            except:
+                return -1
         else:
-            self.card_agent2 = self.agent2_cards[card_idx]
+            return -1
 
     def hand_ready(self):
         return self.card_agent1 and self.card_agent2
@@ -46,8 +59,10 @@ class TrucoRound:
     def update_round_score(self, agent_id):
         if agent_id == 1:
             self.agent1_hands_won += 1
-        else:
+        elif agent_id == 2:
             self.agent2_hands_won += 1
+        else:
+            self.draw_in_hand = True
 
     def is_round_over(self):
         if self.draw_in_hand:
@@ -62,13 +77,19 @@ class TrucoRound:
             except:
                 return False
         else:
-            return agent_card_idx < len(self.agent2_cards)
+            try:
+                self.agent2_cards[agent_card_idx]
+            except:
+                return False
         
     def get_round_winner(self):
         if self.agent1_hands_won > self.agent2_hands_won:
             return 1
         else:
             return 2
+        
+    def both_cards_played_in_hand(self):
+        return self.last_card_agent2 and self.last_card_agent1
 
 
 class TrucoGame:
@@ -114,6 +135,8 @@ class TrucoMatch:
         self.truco_called = False
         self.current_round = None
         self.player_truco = None
+        self.raise_called = False
+        self.player_raise = None
 
 
     def start_new_round(self, agent1_cards, agent2_cards, manilha, cards_strength):
@@ -163,12 +186,15 @@ class TrucoMatch:
             self.truco_called = False
             return False
         else:
+            self.raise_called = True
+            self.player_raise = player_id
             return True
 
         
     def accept_raise(self, player_id):
-        if player_id == self.player_truco:
+        if player_id == self.player_raise:
             self.truco_called = False
+            self.raise_called = False
             return False
         else:
             self.truco_value += 3
@@ -181,6 +207,20 @@ class TrucoMatch:
         else:
             self.truco_value = 1
             self.truco_called = False
+            if player_id == 1:
+                self.agent2_score += self.truco_value
+            else:
+                self.agent1_score += self.truco_value
+            return True
+        
+    def fold_raise(self, player_id):
+        if player_id == self.player_raise:
+            self.truco_called = False
+            self.raise_called = False
+            return False
+        else:
+            self.truco_value = 1
+            self.raise_called = False
             if player_id == 1:
                 self.agent2_score += self.truco_value
             else:
