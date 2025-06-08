@@ -7,16 +7,16 @@ from train.reward_callback import RewardLoggingCallback
 
 
 def train_agent():
-    env = TrucoEnv()
+    check_env(TrucoEnv(), warn=True)
 
-    check_env(env, warn=True)
 
+    vec_env = DummyVecEnv([lambda: TrucoEnv()])
 
     checkpoint_callback = CheckpointCallback(save_freq=10_000, save_path='./checkpoints/', name_prefix='truco_agent')
     callback = RewardLoggingCallback()
 
-    model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=100000, callback=[callback, checkpoint_callback])
+    model = PPO("MlpPolicy", vec_env, verbose=1)
+    model.learn(total_timesteps=10_000, callback=[callback, checkpoint_callback])
 
     model.save('ppo_truco')
 

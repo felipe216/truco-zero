@@ -1,0 +1,169 @@
+
+from truco.rules import get_round_winner
+
+class TrucoRound:
+    def __init__(self, agent1_cards, agent2_cards, manilha, cards_strength):
+        self.agent1_cards = agent1_cards
+        self.agent2_cards = agent2_cards
+        self.manilha = manilha
+        self.cards_strength = cards_strength
+        self.cards_played = []
+        self.agent1_hands_won = 0
+        self.agent2_hands_won = 0
+        self.current_hand_number = 1
+        self.draw_in_hand = False
+        self.last_card_agent1 = None
+        self.last_card_agent2 = None
+
+    def play_hand(self, agent1_card_idx, agent2_card_idx):
+        self.cards_played.append((agent1_card_idx, agent2_card_idx))
+        self.last_card_agent1 = self.agent1_cards.pop(agent1_card_idx)
+        self.last_card_agent2 = self.agent2_cards.pop(agent2_card_idx)
+        self.current_hand_number += 1
+
+        winner = self.get_hand_winner()
+
+        self.update_round_score(winner)
+        return self.is_round_over()
+
+
+    def get_hand_winner(self):
+        return get_round_winner(self.last_card_agent1, self.last_card_agent2, self.cards_strength)
+        
+    def update_round_score(self, agent_id):
+        if agent_id == 1:
+            self.agent1_hands_won += 1
+        else:
+            self.agent2_hands_won += 1
+
+    def is_round_over(self):
+        if self.draw_in_hand:
+            return self.agent1_hands_won == 1 or self.agent2_hands_won == 1
+        else:
+            return self.agent1_hands_won == 2 or self.agent2_hands_won == 2
+
+    def validade_move(self, agent_card_idx, agent_id):
+        if agent_id == 1:
+            return agent_card_idx < len(self.agent1_cards)
+        else:
+            return agent_card_idx < len(self.agent2_cards)
+        
+    def get_round_winner(self):
+        if self.agent1_hands_won > self.agent2_hands_won:
+            return 1
+        else:
+            return 2
+
+
+class TrucoGame:
+    def __init__(self, target_matches_to_win=12):
+        self.agent1_matches_won = 0
+        self.agent2_matches_won = 0
+        self.target_matches_to_win = target_matches_to_win
+        self.current_match = None
+
+
+    def star_new_match(self):
+        self.current_match = TrucoMatch(target_points_to_win=12)
+    
+    def update_game_score(self, winner_agent_id):
+        if winner_agent_id == 1:
+            self.agent1_matches_won += 1
+        else:
+            self.agent2_matches_won += 1
+
+        self.star_new_match()
+        return self.is_game_over()
+
+    def is_game_over(self):
+        return self.agent1_matches_won == self.target_matches_to_win or self.agent2_matches_won == self.target_matches_to_win
+    
+    def get_game_winner(self):
+        if self.agent1_matches_won > self.agent2_matches_won:
+            return 1
+        else:
+            return 2
+    
+
+
+
+class TrucoMatch:
+
+    def __init__(self, truco_value=1, target_points_to_win=12):
+        
+        self.target_points_to_win = target_points_to_win
+        self.agent1_score = 0
+        self.agent2_score = 0
+        self.truco_value = truco_value
+        self.truco_called = False
+        self.current_round = None
+        self.player_truco = None
+
+
+    def star_new_round(self, agent1_cards, agent2_cards, manilha, cards_strength):
+        self.current_round = TrucoRound(agent1_cards, agent2_cards, manilha, cards_strength)
+        self.truco_called = False
+        self.truco_value = 1
+        self.player_truco = None
+    
+
+    def update_match_score(self, winner_agent_id, points):
+        if winner_agent_id == 1:
+            self.agent1_score += points
+        else:
+            self.agent2_score += points
+
+    
+    def is_match_over(self):
+        return self.agent1_score == self.target_points_to_win or self.agent2_score == self.target_points_to_win
+    
+    def get_match_winner(self):
+        if self.agent1_score > self.agent2_score:
+            return 1
+        else:
+            return 2
+        
+    def call_truco(self, player_id):
+        self.truco_called = True
+        self.player_truco = player_id
+
+    def check_truco(self, player_id):
+        if player_id == self.player_truco:
+            self.truco_called = False
+            return False
+        else:
+            return True
+
+    def accept_truco(self, player_id):
+        if player_id == self.player_truco:
+            self.truco_called = False
+            return False
+        else:
+            self.truco_value = 3
+            return True
+
+    def raise_truco(self, player_id):
+        if player_id == self.player_truco:
+            self.truco_called = False
+            return False
+        else:
+            self.truco_value += 3
+            return True
+
+        
+    def accept_raise(self, player_id):
+        if player_id == self.player_truco:
+            self.truco_called = False
+            return False
+        else:
+            self.truco_value += 3
+            return True
+
+    def fold_truco(self, player_id):
+        if player_id == self.player_truco:
+            self.truco_called = False
+            return False
+        else:
+            self.truco_value = 1
+            self.truco_called = False
+            return True
