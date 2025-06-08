@@ -27,7 +27,7 @@ class TrucoEnv(gym.Env):
         super().reset(seed=seed, options=options)
 
         self.game = TrucoGame()
-        self.game.star_new_match()
+        self.game.start_new_match()
         self.current_player = current_player
 
         agent1_cards, agent2_cards, manilha, cards, cards_strength = shuffle_and_deal()
@@ -56,7 +56,11 @@ class TrucoEnv(gym.Env):
         next_player = 3 - acting_player
 
         if action < 3:
-            result = current_round.play_single_card(acting_player, action)
+            if current_match.truco_called and current_match.truco_value == 1:
+                reward += -0.3
+                result = -1
+            else:
+                result = current_round.play_single_card(acting_player, action)
 
             if result == -1:
                 reward = -10
@@ -123,7 +127,7 @@ class TrucoEnv(gym.Env):
                     self.current_player = next_player
 
         elif action == 3:
-            if current_match.check_truco(self, acting_player):
+            if current_match.check_truco(acting_player):
                 current_match.call_truco(acting_player)
                 reward += 0.5
                 self.current_player = next_player

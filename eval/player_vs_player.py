@@ -45,7 +45,7 @@ def play_game_vs():
                     try:
                         action_input = input("Escolha sua ação (0-5): ")
                         action = int(action_input)
-                        if 0 <= action <= 5:
+                        if 0 <= action <= 8:
                             valid_input = True
                         else:
                             print("Ação inválida. Por favor, escolha um número entre 0 e 5.")
@@ -92,5 +92,5 @@ def play_game_vs():
                     return # Sai da função play_game
 
 if __name__ == "__main__":
-    play_game()
+    play_game_vs()
 

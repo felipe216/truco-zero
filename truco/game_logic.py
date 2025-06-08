@@ -17,7 +17,6 @@ class TrucoRound:
         self.cards_played_in_hand = []
 
     def play_single_card(self, agent_id, card_idx):
-        print(self.agent1_cards, agent_id, card_idx)
         if agent_id == 1:
             try:
                 self.last_card_agent1 = self.agent1_cards.pop(card_idx)
@@ -100,7 +99,7 @@ class TrucoGame:
         self.current_match = None
 
 
-    def star_new_match(self):
+    def start_new_match(self):
         self.current_match = TrucoMatch(target_points_to_win=12)
     
     def update_game_score(self, winner_agent_id):
@@ -165,6 +164,7 @@ class TrucoMatch:
     def call_truco(self, player_id):
         self.truco_called = True
         self.player_truco = player_id
+        self.truco_value = 3
 
     def check_truco(self, player_id):
         if player_id == self.player_truco:
@@ -182,22 +182,33 @@ class TrucoMatch:
             return True
 
     def raise_truco(self, player_id):
-        if player_id == self.player_truco:
+        if self.truco_value == 12:
+            return False
+        elif not self.truco_called:
+            return False
+        elif player_id == self.player_raise:
             self.truco_called = False
             return False
         else:
+            if self.truco_value == 1:
+                self.truco_value = 3
+            
+            self.truco_value += 3
             self.raise_called = True
             self.player_raise = player_id
             return True
 
         
     def accept_raise(self, player_id):
-        if player_id == self.player_raise:
+        if self.truco_value == 1:
+            self.truco_value = 3
+        elif player_id == self.player_raise:
             self.truco_called = False
             self.raise_called = False
             return False
         else:
-            self.truco_value += 3
+            if self.truco_value == 3:
+                self.truco_value += 3
             return True
 
     def fold_truco(self, player_id):
@@ -218,8 +229,10 @@ class TrucoMatch:
             self.truco_called = False
             self.raise_called = False
             return False
+        elif not self.raise_called:
+            return False
         else:
-            self.truco_value = 1
+            self.truco_value -= 3
             self.raise_called = False
             if player_id == 1:
                 self.agent2_score += self.truco_value
