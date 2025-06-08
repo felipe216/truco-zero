@@ -14,11 +14,24 @@ class TrucoRound:
         self.draw_in_hand = False
         self.last_card_agent1 = None
         self.last_card_agent2 = None
+        self.card_agent1 = None
+        self.card_agent2 = None
+        self.cards_played_in_hand = [self.card_agent1, self.card_agent2]
+
+    def play_single_card(self, agent_id, card_idx):
+        if agent_id == 1:
+            self.card_agent1 = self.agent1_cards[card_idx]
+        else:
+            self.card_agent2 = self.agent2_cards[card_idx]
+
+    def hand_ready(self):
+        return self.card_agent1 and self.card_agent2
 
     def play_hand(self, agent1_card_idx, agent2_card_idx):
         self.cards_played.append((agent1_card_idx, agent2_card_idx))
         self.last_card_agent1 = self.agent1_cards.pop(agent1_card_idx)
         self.last_card_agent2 = self.agent2_cards.pop(agent2_card_idx)
+
         self.current_hand_number += 1
 
         winner = self.get_hand_winner()
@@ -44,7 +57,10 @@ class TrucoRound:
 
     def validade_move(self, agent_card_idx, agent_id):
         if agent_id == 1:
-            return agent_card_idx < len(self.agent1_cards)
+            try:
+                self.agent1_cards[agent_card_idx]
+            except:
+                return False
         else:
             return agent_card_idx < len(self.agent2_cards)
         
@@ -100,7 +116,7 @@ class TrucoMatch:
         self.player_truco = None
 
 
-    def star_new_round(self, agent1_cards, agent2_cards, manilha, cards_strength):
+    def start_new_round(self, agent1_cards, agent2_cards, manilha, cards_strength):
         self.current_round = TrucoRound(agent1_cards, agent2_cards, manilha, cards_strength)
         self.truco_called = False
         self.truco_value = 1
@@ -147,7 +163,6 @@ class TrucoMatch:
             self.truco_called = False
             return False
         else:
-            self.truco_value += 3
             return True
 
         
@@ -166,4 +181,8 @@ class TrucoMatch:
         else:
             self.truco_value = 1
             self.truco_called = False
+            if player_id == 1:
+                self.agent2_score += self.truco_value
+            else:
+                self.agent1_score += self.truco_value
             return True

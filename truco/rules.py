@@ -26,7 +26,10 @@ def shuffle_and_deal():
 
 
 def get_card_strength(card: str, cards: dict) -> int:
-    return cards[card]
+    try:
+        return cards[card]
+    except KeyError:
+        return 0
 
 def get_round_winner(player1_card: str, player2_card: str, cards_strength: dict) -> int:
     if get_card_strength(player1_card, cards_strength) > get_card_strength(player2_card, cards_strength):

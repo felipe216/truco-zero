@@ -6,5 +6,5 @@ class RandomAgent:
         self.name = name
         pass
 
-    def choose_action(self, observation, available_actions):
+    def choose_action(self, available_actions):
         return random.choice(available_actions)
