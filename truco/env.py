@@ -129,7 +129,11 @@ class TrucoEnv(gym.Env):
                     self.current_player = next_player
 
         elif action == 3:
-            if current_match.check_truco(acting_player):
+            if (current_match.raise_called and not current_match.raise_accepted):
+                reward += -0.3
+                terminated = True
+                self.done = True
+            elif current_match.check_truco(acting_player):
                 current_match.call_truco(acting_player)
                 reward += 0.5
                 self.current_player = next_player
