@@ -224,6 +224,10 @@ class TrucoMatch:
             self.truco_value = 1
             self.truco_called = False
             self.truco_accepted = False
+            self.raise_accepted = False
+            self.player_raise = None
+            self.raise_called = False
+            self.player_truco = None
             if player_id == 1:
                 self.agent2_score += self.truco_value
             else:

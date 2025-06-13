@@ -4,8 +4,9 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from truco.env import TrucoEnv
 import os
 import time # Import time for measuring TPS
+from train.reward_callback import RewardLoggingCallback
 
-def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=100_000, opponent_update_interval=50000):
+def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=10_000, opponent_update_interval=10000):
     # Create environments for both agents
     # Each agent interacts with its own environment instance
     env_agent1 = TrucoEnv(mode="two_agents")
@@ -13,6 +14,8 @@ def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=1
 
     env_agent2 = TrucoEnv(mode="two_agents")
     env_agent2 = DummyVecEnv([lambda: env_agent2]) # Wrap the environment
+
+    callback = RewardLoggingCallback()
 
     # Initialize PPO models for both agents
     model_agent1 = PPO("MlpPolicy", env_agent1, verbose=0, learning_rate=0.0003, n_steps=2048, batch_size=64, n_epochs=10, gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01)
@@ -51,7 +54,7 @@ def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=1
         # PPO's learn method will handle collecting n_steps and updating the model
         # The environment env_agent1 will interact with env_agent2 through the game logic
         # and the current_player mechanism within TrucoEnv.
-        model_agent1.learn(total_timesteps=model_agent1.n_steps, reset_num_timesteps=False)
+        model_agent1.learn(total_timesteps=model_agent1.n_steps, reset_num_timesteps=False, callback=callback)
         current_timesteps += model_agent1.n_steps
 
         # Log progress
