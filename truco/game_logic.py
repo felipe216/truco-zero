@@ -171,6 +171,8 @@ class TrucoMatch:
         if player_id == self.player_truco:
             self.truco_called = False
             return False
+        if self.truco_called or self.truco_accepted:
+            return False
         else:
             return True
 
@@ -217,7 +219,7 @@ class TrucoMatch:
             return True
 
     def fold_truco(self, player_id):
-        if player_id == self.player_truco:
+        if player_id == self.player_truco or not self.truco_called:
             self.truco_called = False
             return False
         else:

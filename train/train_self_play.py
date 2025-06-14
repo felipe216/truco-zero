@@ -1,30 +1,31 @@
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.monitor import Monitor
 from truco.env import TrucoEnv
 import os
 import time # Import time for measuring TPS
 from train.reward_callback import RewardLoggingCallback
 
-def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=10_000, opponent_update_interval=10000):
+def train_self_play(total_timesteps=200_000, log_interval=10000, save_interval=10_000, opponent_update_interval=10000):
     # Create environments for both agents
     # Each agent interacts with its own environment instance
     env_agent1 = TrucoEnv(mode="two_agents")
-    env_agent1 = DummyVecEnv([lambda: env_agent1]) # Wrap the environment
+    env_agent1 = DummyVecEnv([lambda: Monitor(env_agent1)]) # Wrap the environment
 
     env_agent2 = TrucoEnv(mode="two_agents")
-    env_agent2 = DummyVecEnv([lambda: env_agent2]) # Wrap the environment
+    env_agent2 = DummyVecEnv([lambda: Monitor(env_agent2)]) # Wrap the environment
 
     callback = RewardLoggingCallback()
 
     # Initialize PPO models for both agents
     model_agent1 = PPO("MlpPolicy", env_agent1, verbose=0, learning_rate=0.0003, n_steps=2048, batch_size=64, n_epochs=10, gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01)
     # Load previous model if resuming training
-    # try:
-    #     model_agent1.load("models/agent1/ppo_truco_agent1_final", env=env_agent1)
-    #     print("Loaded previous model for Agent 1.")
-    # except Exception as e:
-    #     print(f"Could not load model for Agent 1: {e}. Starting from scratch.")
+    try:
+        model_agent1.load("models/agent1/ppo_truco_agent1_final", env=env_agent1)
+        print("Loaded previous model for Agent 1.")
+    except Exception as e:
+        print(f"Could not load model for Agent 1: {e}. Starting from scratch.")
 
     model_agent2 = PPO("MlpPolicy", env_agent2, verbose=0, learning_rate=0.0003, n_steps=2048, batch_size=64, n_epochs=10, gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01)
     
@@ -76,4 +77,4 @@ def train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=1
 
 if __name__ == "__main__":
     # Example usage: train for 1 million timesteps, update opponent every 50k timesteps
-    train_self_play(total_timesteps=100_000, log_interval=10000, save_interval=100000, opponent_update_interval=50000)
+    train_self_play(total_timesteps=200_000, log_interval=10000, save_interval=100000, opponent_update_interval=50000)

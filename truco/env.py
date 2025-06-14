@@ -174,7 +174,7 @@ class TrucoEnv(gym.Env):
                 terminated = True
                 self.done = True
         elif action == 7: # accept raise
-            if (current_match.truco_called or not current_match.raise_called or current_match.raise_accepted):
+            if ((current_match.truco_called and not current_match.truco_accepted) or (not current_match.raise_called or current_match.raise_accepted)):
                 reward += -0.3
                 terminated = True
                 self.done = True
