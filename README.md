@@ -28,17 +28,19 @@ This project implements a reinforcement learning framework for the card game Tru
     cd truco-zero
     ```
 
-2.  **Create and activate a virtual environment (recommended):**
+2.  **Install `uv` (if you haven't already):**
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    pip install uv
+    # Or for a standalone installation:
+    # curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
+    *Note: `uv` is a fast Python package installer and resolver. Using it is highly recommended.*
 
-3.  **Install dependencies:**
-    As there is no `requirements.txt` file, you might need to install common ML/RL libraries.
+3.  **Use uv to sync**
     ```bash
-    pip install -r requirements.txt
+    uv sync
     ```
+    *Note: `uv` creates the virtual environment in a `.venv` directory by default.*
 
 ## Usage
 
